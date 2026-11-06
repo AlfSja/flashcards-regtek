@@ -1,0 +1,118 @@
+<!doctype html>
+<html lang="no"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>AIS2002 Flashcards</title>
+<style>
+:root{--bg:#f2f5f8;--g:#dfe6ee;--fg:#14213d;--card:#fff;--mut:#5b6778;--ln:#c9d3de;--ok:#17794a;--bad:#b3261e;--ac:#2a6fdb}
+@media(prefers-color-scheme:dark){:root{--bg:#0f1520;--g:#1a2432;--fg:#e6ebf2;--card:#172030;--mut:#9aa7b8;--ln:#33445a;--ok:#4cc98a;--bad:#ff8f86;--ac:#7fb0f0}}
+*{box-sizing:border-box}
+body{margin:0;font:16px/1.5 system-ui,sans-serif;color:var(--fg);background:var(--bg);background-image:linear-gradient(var(--g) 1px,transparent 1px),linear-gradient(90deg,var(--g) 1px,transparent 1px);background-size:24px 24px}
+header,main{max-width:680px;margin:0 auto;padding:14px 16px}
+h1{font:700 22px Georgia,serif;margin:0 0 8px}
+.bar{display:flex;gap:12px;flex-wrap:wrap;align-items:center}
+select,button{font:inherit;color:var(--fg)}
+select{padding:6px 8px;border:1px solid var(--ln);border-radius:6px;background:var(--card);max-width:100%}
+#card{background:var(--card);border:1px solid var(--ln);border-radius:8px;padding:16px}
+.meta{color:var(--mut);font-size:13px;margin-bottom:8px}
+h2{font:600 19px/1.35 Georgia,serif;margin:10px 0 12px}
+svg{width:100%;max-width:460px;display:block;margin:0 auto;background:var(--card);border:1px solid var(--ln);border-radius:4px}
+svg text{font:10px system-ui,sans-serif;fill:var(--mut)}
+.o{display:block;width:100%;text-align:left;margin:0 0 8px;padding:10px 12px;border:1px solid var(--ln);border-radius:6px;background:transparent;cursor:pointer}
+.o:hover:not(:disabled){border-color:var(--ac)}
+.o.ok{border-color:var(--ok);background:color-mix(in srgb,var(--ok) 15%,transparent)}
+.o.bad{border-color:var(--bad);background:color-mix(in srgb,var(--bad) 15%,transparent)}
+#ex{border-left:3px solid var(--ac);padding:6px 12px;margin:12px 0}
+#nx,.go{padding:9px 18px;border:0;border-radius:6px;background:var(--ac);color:#fff;font-weight:600;cursor:pointer}
+:focus-visible{outline:2px solid var(--ac);outline-offset:2px}
+</style></head><body>
+<header><h1>AIS2002 Reguleringsteknikk: flashcards</h1>
+<div class="bar"><select id="ch" aria-label="Kapittel"></select><label><input type="checkbox" id="sh" checked> Bland rekkefølgen</label></div></header>
+<main><div id="card"></div></main>
+<script>
+const CH=["Gjenkjenn plottet","Tidsrespons","Modellering","Stabilitet og statisk avvik","P-, PI-, PD-regulering","Rotkurver","Frekvensrespons","Tilstandsrom","Tilstandsregulering","Eksamensteknikk"];
+// [kapittel, plott, spørsmål, [riktig, feil...], forklaring]
+const Q=[
+[0,['step',10,1,[[-1,2]]],"Hva slags plott er dette?",["Stegrespons","Bode-diagram","Nyquist-diagram","Rotkurve"],"Tid på x-aksen og utgangen y(t) som går mot en sluttverdi etter et sprang inn = stegrespons (step i Matlab). Ingen svingning her, så 1. ordens system."],
+[0,['bode',[1],[1,1]],"Hva slags plott er dette?",["Bode-diagram","Stegrespons","Nyquist-diagram","Pol-nullpunkt-kart"],"Logaritmisk frekvens (rad/s) på x-aksen, forsterkning i dB øverst og fase i grader nederst. Bode viser svar på sinus ved ulike frekvenser, ikke utvikling i tid."],
+[0,['nyq',[5],[1,6,11,6],1.5],"Hva slags plott er dette?",["Nyquist-diagram","Bode-diagram","Rotkurve","Stegrespons"],"Reell del på x-aksen og imaginærdel på y-aksen: kurven er G(jω) i det komplekse planet. Punktet −1 (rødt kryss) avgjør stabilitet."],
+[0,['rloc',[1],[1,2,0],30],"Hva slags plott er dette?",["Rotkurve (root locus)","Pol-nullpunkt-kart","Nyquist-diagram","Bode-diagram"],"Kurver i s-planet som viser hvor lukket-sløyfe-polene går når K øker fra 0. Røde kryss er åpen-sløyfe-polene (start, K=0)."],
+[0,['pz',[[-1,2],[-1,-2],[-3,0]],[[-2,0]]],"Hva viser plottet?",["Pol-nullpunkt-kart (× pol, ○ nullpunkt)","Rotkurve","Nyquist-diagram","Stegrespons"],"Bare enkeltpunkter i s-planet, ingen kurver. Alle punktene ligger til venstre for imaginæraksen."],
+[0,0,"Hva skiller en stegrespons fra et Bode-diagram?",["Stegrespons: tid på x-aksen. Bode: frekvens (log) på x-aksen","De viser det samme med ulik skala","Bode viser tid, stegrespons viser frekvens","Stegrespons har to paneler, Bode har ett"],"Stegrespons = hvordan utgangen utvikler seg i tid etter et sprang. Bode = forsterkning og fase for sinus ved ulike frekvenser."],
+[1,['step',10,1,[[-1,2]]],"Omtrent hva er tidskonstanten τ i denne stegresponsen?",["2 s","1 s","4 s","8 s"],"63 %-regelen: y(τ)=0,63·y(∞). Her er y(∞)=1 og kurven er ca. 0,63 ved t=2 s. Ts≈4τ=8 s er fellen."],
+[1,['step',12,1,[[0.2,1]]],"Hvilken demping har dette systemet?",["Underdempet (0<ζ<1)","Overdempet","Kritisk dempet","Udempet"],"Svinger og overshooter før det setter seg: komplekse poler = underdempet. Udempet (ζ=0) svinger for alltid med konstant amplitude."],
+[1,['step',12,1,[[1.8,1]]],"Hvilken demping har dette systemet?",["Overdempet (ζ>1)","Underdempet","Udempet","Ustabilt"],"Ingen oversving og en treg, avrundet stigning: to reelle poler = overdempet. Kritisk dempet (ζ=1) er grensen rett før oversving."],
+[1,['step',12,1,[[0.4,1]]],"Omtrent hvor stort er oversvinget (%OS)?",["25 %","5 %","50 %","0 %"],"Topp ≈ 1,25, sluttverdi 1: %OS=(topp−slutt)/slutt·100 ≈ 25 %. Stemmer med ζ=0,4: %OS=100·e^(−ζπ/√(1−ζ²))."],
+[1,0,"Poler −1 ± j3. Hva styrer innsvingningstiden Ts?",["Reell del (1): Ts≈4/1=4 s","Imaginærdel (3): Ts≈1,3 s","Begge like mye","Ingen av dem"],"Reell del σ styrer hvor raskt svingningen dør ut (e^(−σt)). Imaginærdelen ωd gir bare svingefrekvensen."],
+[1,0,"Hva er effekten av et nullpunkt i venstre halvplan nær de dominerende polene?",["Økt overshoot og raskere respons","Mindre overshoot","Ingen effekt, bare poler teller","Gjør systemet ustabilt"],"Nullpunkter endrer ikke stabilitet (det gjør bare poler), men former responsen og øker typisk overshoot."],
+[2,0,"Masse-fjær-demper Mẍ+Dẋ+Kx=F. Hva er X(s)/F(s)?",["1/(Ms²+Ds+K)","1/(Ms+D+K)","Ms²+Ds+K","K/(Ms²+Ds)"],"Laplace med nullstilte initialverdier: (Ms²+Ds+K)X(s)=F(s). Nevneren er det karakteristiske polynomet, ωn=√(K/M)."],
+[2,0,"Hva er impedansen til kondensator og spole (Laplace)?",["1/(Cs) og Ls","Cs og 1/(Ls)","C/s og L/s","RC og L/R"],"i=C·dv/dt gir Z=1/(Cs). v=L·di/dt gir Z=Ls. RC-lavpass: Vo/Vi=1/(RCs+1), τ=RC."],
+[3,['pz',[[-1,2],[-1,-2],[-3,0]],[]],"Er systemet stabilt?",["Stabilt","Ustabilt","Marginalt stabilt","Kan ikke avgjøres"],"Alle poler har negativ reell del (venstre halvplan) = stabilt."],
+[3,['pz',[[1,0],[-2,0]],[]],"Er systemet stabilt?",["Ustabilt","Stabilt","Marginalt stabilt","Overdempet"],"Polen i s=+1 er i høyre halvplan og gir e^(t) som vokser. Én pol i HHP holder for ustabilt."],
+[3,0,"Routh for s³+2s²+3s+6: hva er stabiliteten?",["Marginalt stabilt (nullrad i s¹)","Stabilt","Ustabilt, 2 poler i HHP","Ustabilt, 1 pol i HHP"],"s³: 1 3. s²: 2 6. s¹: (2·3−1·6)/2=0, altså nullrad. Hjelpeligning 2s²+6=0 gir ±j√3. Faktisk (s+2)(s²+3)."],
+[3,0,"G(s)=10/(s(s+2)) med enhetstilbakekobling. Stasjonært avvik for rampe?",["0,2","0","∞","5"],"Type 1 (én integrator). Kv=lim sG=10/2=5, e∞=1/Kv=0,2. Steg gir 0, parabel gir ∞."],
+[4,0,"Hva gjør PI-regulering?",["Fjerner statisk avvik (systemtypen øker med 1)","Gir mer demping og mindre overshoot","Gjør systemet raskere uten andre effekter","Fjerner støyforsterkning"],"Integralvirkning gir null stasjonært avvik mot konstante inngangssignal og forstyrrelser. Ulempe: mindre demping."],
+[4,0,"G=K/(s(s+4)) i enhetstilbakekobling. Hvilken K gir ζ=0,5?",["16","4","8","2"],"Lukket sløyfe: s²+4s+K. ωn²=K og 2ζωn=4. ζ=0,5 gir ωn=4 og dermed K=16."],
+[4,['step',14,1,[[0.7,1,'blå'],[0.2,1,'oransje']]],"P-regulering av samme prosess. Hva forklarer oransje kurve (mer svingning)?",["Større K i P-regulatoren (lavere ζ)","Mindre K i P-regulatoren","Et lagt til D-ledd"],"Større K gir raskere, men mindre dempet respons. D-ledd ville gitt mer demping, ikke mindre."],
+[5,['rloc',[1],[1,2,0],30],"Hva skjer med polene når K øker?",["De møtes ved −1 og går så loddrett opp og ned","De går mot høyre halvplan","De går mot origo","De er upåvirket"],"Break-away ved s=−1. Etter det er reell del −1 konstant: samme Ts, men høyere frekvens og lavere ζ."],
+[5,0,"Poler i 0, −2 og −4 og ingen nullpunkter. Asymptotenes skjæringspunkt σa?",["−2","−6","−3","0"],"σa=(Σpoler−Σnullpunkter)/(np−nz)=(0−2−4)/3=−2. Vinkler: ±60° og 180°."],
+[5,['rloc',[1],[1,3,2,0],14],"Hva er kritisk K (krysser imaginæraksen)?",["6","3","2","1"],"s³+3s²+2s+K: Routh s¹: (3·2−K)/3=0 gir K=6. Krysser ved ω=√2."],
+[6,['bode',[10],[1,1,0]],"Hva sier −20 dB/dekade ved lav frekvens og fase −90°?",["Én integrator (type 1)","Ett nullpunkt","To poler","Systemet er ustabilt"],"Hver pol i origo gir −20 dB/dek og −90°. Type 1 gir null avvik på steg."],
+[6,['bode',[1],[1,1]],"Hvor ligger knekkfrekvensen?",["1 rad/s","10 rad/s","0,1 rad/s","0 dB"],"For 1/(s+1) er knekk ved ω=a=1. Etter knekken faller amplituden −20 dB/dek, og fasen er −45° akkurat ved knekk."],
+[6,0,"Hva er fasemargin PM?",["180° + fasen der |G|=0 dB","Fasen der |G| = −180°","Amplituden der fasen er −180°","180° − ωn"],"PM=180°+∠G(jωgc). GM leses ved ωpc (fase −180°). Tommelregel: PM≈100·ζ."],
+[6,['nyq',[100],[1,6,11,6],3],"Åpen sløyfe er stabil (P=0). Kurven går til venstre for −1. Lukket sløyfe?",["Ustabil (Z=N+P>0)","Stabil","Marginalt stabil","Ikke nok informasjon"],"Skal ikke omslutte −1 når P=0. Her passerer kurven ca. −1,7, altså GM<1, og forsterkningen må ned."],
+[7,0,"Hva er G(s) fra tilstandsmodellen ẋ=Ax+Bu, y=Cx+Du?",["C(sI−A)⁻¹B + D","(sI−A)C⁻¹B","C(sI+A)B + D","A(sI−C)⁻¹B"],"Polene er egenverdiene til A: det(sI−A)=0."],
+[7,0,"Fasevariabelform for G=b0/(s²+a1s+a0). Nederste rad i A?",["[−a0  −a1]","[a0  a1]","[−a1  −a0]","[0  1]"],"A=[0 1; −a0 −a1], B=[0;1], C=[b0 0]. Koeffisientene står med minus i siste rad, laveste orden først."],
+[8,0,"Med u=−Kx+r, hva er lukket-sløyfe-polene?",["Egenverdiene til A−BK","Egenverdiene til A","Egenverdiene til A+K","Egenverdiene til B"],"ẋ=(A−BK)x+Br. K velges slik at det(sI−A+BK)=ønsket polynom."],
+[8,0,"Hva kreves for polplassering?",["Kontrollerbarhet: rank[B AB … Aⁿ⁻¹B]=n","Observerbarhet","At systemet allerede er stabilt","Systemtype 1"],"Kontrollerbarhetsmatrisen må ha full rang (ctrb i Matlab). Da kan polene plasseres fritt (place/acker)."],
+[8,0,"Krav: Ts=2 s (Ts≈4/σ) og %OS≤5 %. Reell del for dominerende poler?",["−2","−4","−0,5","−8"],"σ=4/Ts=2. ζ≈0,69 for 5 %. En tredje pol plasseres ca. 10× lenger ut, her −20."],
+[9,['step',10,2,[[0.4,1.5]]],"Sluttverdi 2, topp ca. 2,5. Hva er %OS?",["25 %","50 %","0,5 %","125 %"],"(2,5−2)/2·100=25 %. Vanlig feil: dele på toppen i stedet for sluttverdien."],
+[9,0,"Matlab-feil: ζ fra overshoot gir rare tall. Hva er en typisk skjult feil?",["OS i prosent (25) i stedet for brøk (0,25)","Bruker ln i stedet for log10","Bruker π","Bruker sqrt"],"ζ=−ln(OS)/√(π²+ln²(OS)) med OS som brøk. Også: ωn=π/(Tp·√(1−ζ²)), ikke π/Tp, og del på stegamplituden for K."]
+];
+const W=320,CO=['#2a6fdb','#e07b00'];
+const ls=(a,b,n)=>Array.from({length:n},(_,i)=>a+(b-a)*i/(n-1)),lg=(a,b,n)=>ls(Math.log10(a),Math.log10(b),n).map(v=>10**v);
+const cm=(a,b)=>[a[0]*b[0]-a[1]*b[1],a[0]*b[1]+a[1]*b[0]],cd=(a,b)=>{const k=b[0]*b[0]+b[1]*b[1];return[(a[0]*b[0]+a[1]*b[1])/k,(a[1]*b[0]-a[0]*b[1])/k]},cs=(a,b)=>[a[0]-b[0],a[1]-b[1]];
+const pv=(c,s)=>c.reduce((a,x)=>{const m=cm(a,s);return[m[0]+x,m[1]]},[0,0]);
+function roots(c){const n=c.length-1,a=c.map(x=>x/c[0]);let r=Array.from({length:n},(_,i)=>{const t=.9+i*2.1,m=.7*(1+i*.4);return[m*Math.cos(t),m*Math.sin(t)]});
+for(let k=0;k<150;k++)r=r.map((z,i)=>{let q=[1,0];r.forEach((u,j)=>{if(j!=i)q=cm(q,cs(z,u))});const d=cd(pv(a,z),q);return[z[0]-d[0],z[1]-d[1]]});return r}
+function s2(z,w,t){if(z==0)return 1-Math.cos(w*t);if(z<1){const d=w*Math.sqrt(1-z*z);return 1-Math.exp(-z*w*t)*(Math.cos(d*t)+z*w/d*Math.sin(d*t))}if(z==1)return 1-(1+w*t)*Math.exp(-w*t);const r=Math.sqrt(z*z-1),p=w*(z-r),q=w*(z+r);return 1-(q*Math.exp(-p*t)-p*Math.exp(-q*t))/(q-p)}
+function box(x,y,w,h,x0,x1,y0,y1,xl,yl,lgx){
+const X=v=>x+((lgx?Math.log10(v/x0):v-x0)/(lgx?Math.log10(x1/x0):x1-x0))*w,Y=v=>y+h-((v-y0)/(y1-y0))*h;
+let s=`<rect x="${x}" y="${y}" width="${w}" height="${h}" fill="none" stroke="var(--ln)"/>`;
+for(let i=0;i<=4;i++){const v=y0+i*(y1-y0)/4;s+=`<line x1="${x}" x2="${x+w}" y1="${Y(v)}" y2="${Y(v)}" stroke="var(--ln)" stroke-dasharray="2 3"/><text x="${x-3}" y="${Y(v)+3}" text-anchor="end">${+v.toFixed(1)}</text>`}
+if(lgx){for(let d=Math.ceil(Math.log10(x0));d<=Math.log10(x1)+1e-9;d++){const v=10**d;s+=`<line y1="${y}" y2="${y+h}" x1="${X(v)}" x2="${X(v)}" stroke="var(--ln)" stroke-dasharray="2 3"/><text x="${X(v)}" y="${y+h+10}" text-anchor="middle">${v}</text>`}}
+else for(let i=0;i<=4;i++){const v=x0+i*(x1-x0)/4;s+=`<text x="${X(v)}" y="${y+h+10}" text-anchor="middle">${+v.toFixed(1)}</text>`}
+s+=`<text x="${x+w/2}" y="${y+h+21}" text-anchor="middle">${xl}</text><text transform="rotate(-90)" x="${-(y+h/2)}" y="9" text-anchor="middle">${yl}</text>`;
+return{X,Y,s}}
+const pl=(p,c,X,Y,d)=>`<polyline fill="none" stroke="${c}" stroke-width="1.8" ${d?'stroke-dasharray="4 3"':''} points="${p.map(q=>X(q[0]).toFixed(1)+','+Y(q[1]).toFixed(1)).join(' ')}"/>`;
+const xx=(x,y,c)=>`<path d="M${x-4} ${y-4}l8 8m0-8l-8 8" stroke="${c}" stroke-width="2" fill="none"/>`;
+function plot(p){const[t,...a]=p;let s='',h=200;
+if(t=='step'){const[tm,g,cs_]=a,ts=ls(0,tm,200),ys=cs_.map(c=>ts.map(x=>g*(c[0]<0?1-Math.exp(-x/c[1]):s2(c[0],c[1],x)))),ym=+(Math.max(...ys.flat())*1.1).toFixed(1),b=box(36,10,276,150,0,tm,0,ym,'t (s)','y(t)');s=b.s;ys.forEach((y,i)=>{s+=pl(ts.map((x,j)=>[x,y[j]]),CO[i],b.X,b.Y);if(cs_[i][2])s+=`<text x="48" y="${26+12*i}" fill="${CO[i]}">${cs_[i][2]}</text>`})}
+else if(t=='bode'){const[n,d]=a,w=lg(.01,100,200),Hs=w.map(x=>cd(pv(n,[0,x]),pv(d,[0,x]))),m=Hs.map(z=>20*Math.log10(Math.hypot(z[0],z[1])));let f=Hs.map(z=>Math.atan2(z[1],z[0])*180/Math.PI);for(let i=1;i<f.length;i++){while(f[i]-f[i-1]>180)f[i]-=360;while(f[i]-f[i-1]<-180)f[i]+=360}
+const m0=Math.floor(Math.min(...m)/20)*20,m1=Math.max(Math.ceil(Math.max(...m)/20)*20,m0+20),p0=Math.floor(Math.min(...f)/90)*90,p1=Math.max(Math.ceil(Math.max(...f)/90)*90,p0+90);h=240;
+const b1=box(36,8,276,90,.01,100,m0,m1,'','Forsterkning (dB)',1),b2=box(36,128,276,90,.01,100,p0,p1,'ω (rad/s, logaritmisk)','Fase (°)',1);
+s=b1.s+b2.s+pl(w.map((x,i)=>[x,m[i]]),CO[0],b1.X,b1.Y)+pl(w.map((x,i)=>[x,f[i]]),CO[1],b2.X,b2.Y)}
+else if(t=='nyq'){const[n,d,R]=a,w=lg(.01,200,500),P=w.map(x=>cd(pv(n,[0,x]),pv(d,[0,x]))),b=box(36,10,276,170,-R,R,-R,R,'Re','Im');
+s=b.s+`<clipPath id="c"><rect x="36" y="10" width="276" height="170"/></clipPath><g clip-path="url(#c)">`+pl(P,CO[0],b.X,b.Y)+pl(P.map(z=>[z[0],-z[1]]),CO[0],b.X,b.Y,1)+`</g>`+xx(b.X(-1),b.Y(0),'#d33')+`<text x="${b.X(-1)}" y="${b.Y(0)-8}" fill="#d33" text-anchor="middle">−1</text>`}
+else if(t=='rloc'){const[n,d,km]=a,pd=Array(d.length-n.length).fill(0).concat(n),R=[];[0].concat(lg(.02,km,160)).forEach(k=>roots(d.map((c,i)=>c+k*pd[i])).forEach(r=>R.push(r)));
+const x0=Math.floor(Math.min(...R.map(r=>r[0]))-.5),x1=Math.ceil(Math.max(...R.map(r=>r[0]),0)+.5),ym=Math.ceil(Math.max(...R.map(r=>Math.abs(r[1])))+.5),b=box(36,10,276,170,x0,x1,-ym,ym,'Re(s)','Im(s)');
+s=b.s+`<line x1="${b.X(0)}" x2="${b.X(0)}" y1="10" y2="180" stroke="var(--fg)"/>`+R.map(r=>`<circle cx="${b.X(r[0]).toFixed(1)}" cy="${b.Y(r[1]).toFixed(1)}" r="1.3" fill="${CO[0]}"/>`).join('')+roots(d).map(r=>xx(b.X(r[0]),b.Y(r[1]),'#d33')).join('')}
+else if(t=='pz'){const[P,Z]=a,A=P.concat(Z),x0=Math.floor(Math.min(...A.map(r=>r[0]))-1),x1=Math.ceil(Math.max(...A.map(r=>r[0]),0)+1),ym=Math.ceil(Math.max(...A.map(r=>Math.abs(r[1])))+1),b=box(36,10,276,170,x0,x1,-ym,ym,'Re(s)','Im(s)');
+s=b.s+`<line x1="${b.X(0)}" x2="${b.X(0)}" y1="10" y2="180" stroke="var(--fg)"/>`+P.map(r=>xx(b.X(r[0]),b.Y(r[1]),'#d33')).join('')+Z.map(r=>`<circle cx="${b.X(r[0])}" cy="${b.Y(r[1])}" r="5" fill="none" stroke="${CO[0]}" stroke-width="2"/>`).join('')}
+return`<svg viewBox="0 0 ${W} ${h}" role="img" aria-label="Plott">${s}</svg>`}
+const $=s=>document.querySelector(s),sel=$('#ch');
+sel.innerHTML='<option value="a">Alle kapitler</option><option value="m">Bare de jeg bommet på</option>'+CH.map((c,i)=>`<option value="${i}">${i}. ${c}</option>`).join('');
+let pool=[],i=0,sc=[0,0],ans=false,ord=[];
+const ld=()=>{try{return JSON.parse(localStorage.getItem('ais_miss')||'[]')}catch(e){return[]}},sv=m=>{try{localStorage.setItem('ais_miss',JSON.stringify(m))}catch(e){}};
+function start(){const v=sel.value,m=ld();pool=Q.map((q,k)=>k).filter(k=>v=='a'||(v=='m'?m.includes(k):Q[k][0]==v));if($('#sh').checked)pool.sort(()=>Math.random()-.5);i=0;sc=[0,0];show()}
+function show(){const c=$('#card');if(!pool.length){c.innerHTML='<p>Ingen kort her ennå. Svar feil på noen først, så havner de her.</p>';return}
+if(i>=pool.length){c.innerHTML=`<h2>Ferdig: ${sc[0]} av ${sc[1]} riktige</h2><button class="go" onclick="start()">Start på nytt</button>`;return}
+const q=Q[pool[i]];ord=q[3].map((_,x)=>x).sort(()=>Math.random()-.5);ans=false;
+c.innerHTML=`<div class="meta">${CH[q[0]]} · kort ${i+1} av ${pool.length} · riktig ${sc[0]} av ${sc[1]}</div>${q[1]?plot(q[1]):''}<h2>${q[2]}</h2>`+ord.map((o,j)=>`<button class="o" onclick="pick(${j})">${'ABCD'[j]}. ${q[3][o]}</button>`).join('')+'<div id="ex" hidden></div><button id="nx" hidden onclick="nxt()">Neste</button>'}
+function pick(j){if(ans||j>=ord.length)return;ans=true;const k=pool[i],q=Q[k],ok=ord[j]==0;sc[1]++;if(ok)sc[0]++;const m=ld(),x=m.indexOf(k);if(!ok&&x<0)m.push(k);if(ok&&x>=0)m.splice(x,1);sv(m);
+document.querySelectorAll('.o').forEach((b,x)=>{if(ord[x]==0)b.classList.add('ok');else if(x==j)b.classList.add('bad');b.disabled=true});
+const e=$('#ex');e.hidden=false;e.innerHTML=(ok?'<b>Riktig.</b> ':'<b>Feil.</b> ')+q[4];$('#nx').hidden=false;$('#nx').focus()}
+function nxt(){i++;show()}
+sel.onchange=start;$('#sh').onchange=start;
+document.onkeydown=e=>{if('1234'.includes(e.key)&&e.key)pick(+e.key-1)};
+start();
+</script></body></html>
